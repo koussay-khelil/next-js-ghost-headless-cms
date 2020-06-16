@@ -1,0 +1,6 @@
+Sitemap: https://gomytech.gomycode.co/api/sitemap.xml
+
+User-agent: *
+Allow: /*
+
+Disallow: /api/*

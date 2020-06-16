@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gomytech-app
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gomytech-app
+  replicas: 1 # tells deployment to run 1 pods matching the template
+  template: # create pods using pod definition in this template
+    metadata:
+      labels:
+        app: gomytech-app
+    spec:
+      containers:
+        - name: gomytech-app
+          image: gmccontainerregistry.azurecr.io/gomycode-production/gomytech:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ENABLE_GATSBY_REFRESH_ENDPOINT
+              value: "true"
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "50m"
+            limits:
+              memory: "1Gi"
+              cpu: "800m"
+      imagePullSecrets:
+        - name: gomycode-azure-registry-creds
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gomytech-app
+  labels:
+    app: gomytech-app
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: gomytech-app
+  type: ClusterIP
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gomytech-app
+spec:
+  tls:
+    - hosts:
+        - gomytech.gomycode.co
+      secretName: default-tls-gomycode-co
+  rules:
+    - host: gomytech.gomycode.co
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: gomytech-app
+              servicePort: 3000
+    - host: no-ssl-host-gomytech.gomycode.co
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: gomytech-app
+              servicePort: 3000
